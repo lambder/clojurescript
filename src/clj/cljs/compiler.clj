@@ -660,7 +660,7 @@
               ([_ sym doc init] {:sym sym :doc doc :init init}))
         args (apply pfn form)
         sym (:sym args)]
-    (assert (not (namespace sym)) "Can't def ns-qualified name")
+    ;(assert (not (namespace sym)) "Can't def ns-qualified name")
     (let [name (munge (:name (resolve-var (dissoc env :locals) sym)))
           init-expr (when (contains? args :init) (disallowing-recur
                                                   (analyze (assoc env :context :expr) (:init args) sym)))
@@ -1034,14 +1034,16 @@
   (let [env (assoc env :line
                    (or (-> form meta :line)
                        (:line env)))]
-    (let [op (first form)]
-      (assert (not (nil? op)) "Can't call nil")
-      (let [mform (macroexpand-1 env form)]
-        (if (identical? form mform)
-          (if (specials op)
-            (parse op env form name)
-            (parse-invoke env form))
-          (analyze env mform name))))))
+    (do
+      (in-ns (symbol (:name (:ns env))))                       
+      (let [op (first form)]
+        (assert (not (nil? op)) "Can't call nil")
+        (let [mform (macroexpand-1 env form)]
+          (if (identical? form mform)
+            (if (specials op)
+              (parse op env form name)
+              (parse-invoke env form))
+            (analyze env mform name)))))))
 
 (declare analyze-wrap-meta)
 
